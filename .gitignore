@@ -1,0 +1,10 @@
+*.png
+*.svg
+*~
+.Rhistory
+meta/*
+Replication/*
+chart/*
+sj/*
+cache/*
+jags/*.txt

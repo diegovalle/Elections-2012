@@ -1,0 +1,217 @@
+<!doctype html>
+<!--[if lt IE 7]> <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="en"> <![endif]-->
+<!--[if IE 7]>    <html class="no-js lt-ie9 lt-ie8" lang="en"> <![endif]-->
+<!--[if IE 8]>    <html class="no-js lt-ie9" lang="en"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en"> <!--<![endif]-->
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+<meta property="og:description" content="Poll of polls of the Mexican 2012 presidential election" /> 
+  <meta property="og:image" content=""/>
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Poll of polls of the Mexican 2012 presidential election"/>
+  <meta property="og:title" content="Elect-o-meter"/>
+  <meta property="og:url" content="http://www.diegovalle.net/electometer" />
+  <meta content="808656520" property="fb:admins"/>
+
+	<title>Elect-o-meter</title>
+	<meta name="description" content="Poll of polls of the Mexican 2012 presidential election">
+	<meta name="author" content="Diego Valle-Jones">
+
+	<meta name="viewport" content="width=device-width">
+        <style>
+          path {
+	    //stroke: steelblue;
+	    stroke-width: 3.5;
+	    fill: none;
+	    //stroke-dasharray: 5,1,1
+	  }
+	  
+	  line {
+	    stroke: black;
+	  }
+text{
+//color:white;
+//stroke: #666;
+}
+	  .tooltip2{
+	    font-weigth:bold;
+	    font-family:Corbel, "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", "DejaVu Sans", "Bitstream Vera Sans", "Liberation Sans", Verdana, "Verdana Ref", sans-serif;
+	    font-size:1.3em;
+	    color:white;
+	  }
+	  text {
+	    font-family: Arial;
+	    font-size: 9pt;
+	    color:white;
+	  }
+        </style>
+	<!--<link rel="stylesheet/less" href="less/style.less">
+	<script src="js/libs/less-1.3.0.min.js"></script>-->
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<!-- If you live in Mexico you are not allowed to look at polls-->
+	<script language="JavaScript" src="http://j.maxmind.com/app/country.js"></script>
+	<script language="JavaScript">var currentTime = new Date();if(geoip_country_code()=="MX" & currentTime.getDate() >= 28)window.location.href = "http://www.adnpolitico.com/encuestas/2012/06/21/amai-la-veda-de-encuestas-causa-incertidumbre-en-el-elector";</script>	
+	<!-- Use SimpLESS (Win/Linux/Mac) or LESS.app (Mac) to compile your .less files
+	to style.css, and replace the 2 lines above by this one:
+-->
+	<link rel="stylesheet" href="less/bootstrap.css">
+	 
+
+	<script src="js/libs/modernizr-2.5.3-respond-1.1.0.min.js"></script>
+</head>
+<body  style="background:url('img/concrete_wall.png')">
+<!--[if lt IE 7]><p class=chromeframe>Your browser is <em>ancient!</em> <a href="http://browsehappy.com/">Upgrade to a different browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to experience this site.</p><![endif]-->
+
+    <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="#">Elect-o-meter</a>
+          <div class="nav-collapse">
+            <ul class="nav">
+              <li ><a href="#">Home</a></li>
+              <li><a href="#about">About</a></li>
+              <li><a href="#contact">Contact</a></li>
+            </ul>
+          </div><!--/.nav-collapse -->
+
+<div style="padding:10px 0 0 0;margin-left:537px; height:40px;">
+<a href="https://twitter.com/share" class="twitter-share-button" data-via="diegovalle" data-count="none">Tweet</a>
+
+<a href="https://twitter.com/diegovalle" class="twitter-follow-button" data-show-count="false">Follow @diegovalle</a>
+
+<div class="fb-like" data-href="http://www.diegovalle.net/electometer" data-send="false" data-width="450" data-show-faces="true" data-colorscheme="dark"></div>
+</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container" style="margin-top:80px">
+
+
+
+
+      <!-- Main hero unit for a primary marketing message or call to action -->
+      <div class="hero-unit">
+        <div class="row">
+          <div class="span14">
+<p id ="candidates"></p>
+	    <div id="chart"></div>
+<div class="span6"><p>The solid line is the Bayes estimate of the <i>true</i> voting intention of each candidate taking into account the effects of each polling firm. The dots are the individual polls.</p></div>
+	  </div>
+	  <div class="span4">
+	    <div id = "results">
+	      <h2 style = "padding-bottom:80px;">Results on election day:</h2>
+
+	      <div class="navbar navbar-static navbar_as_heading">
+		<div class="navbar-inner">
+		  <h3 style="display: inline-block;">Enrique Peña Nieto</h3>
+		  <div style="display: inline-block;padding:0 0 5px 5px;width:20px;border-top:3px solid red"></div>
+		</div>
+		<p id= "epn" style = "padding:10px 10px 10px 30px;background-image:url('img/subtle_freckles.png');color:#111"></p>
+	      </div>
+
+	      <div class="navbar navbar-static navbar_as_heading">
+		<div class="navbar-inner">
+		  <h3 style="display: inline-block;">Andrés Manuel López Obrador</h3>
+		  <div style="display: inline-block;padding:0 0 5px 5px;width:20px;border-top:3px solid #ffd217"></div>
+		</div>
+		<p id= "amlo" style = "padding:10px 10px 10px 30px;background-image:url('img/subtle_freckles.png');color:#111"></p>
+	      </div>
+
+	      <div class="navbar navbar-static navbar_as_heading">
+		<div class="navbar-inner">
+		  <h3 style ="display: inline-block;">Josefina Vázquez Mota</h3>
+		  <div style="display: inline-block;padding:0 0 5px 5px;width:20px;border-top:3px solid #00448b"></div>
+		</div>
+		<p id= "jvm" style = "padding:10px 10px 10px 30px;background-image:url('img/subtle_freckles.png');color:#111"></p>
+	      </div>
+
+	      <div class="navbar navbar-static navbar_as_heading">
+		<div class="navbar-inner">
+		  <h3 style ="display: inline-block;">Gabriel Quadri</h3>
+		  <div style="display: inline-block;padding:0 0 5px 5px;width:20px;border-top:3px solid lightblue"></div>
+		</div>
+		<p id= "gqt" style = "padding:10px 10px 10px 30px;background-image:url('img/subtle_freckles.png');color:#111"></p>
+	      </div>
+
+
+	      </div>
+
+	    
+       
+	  </div>
+<h1><a name="about">About</a></h1>
+This page was made by <a href="http://www.diegovalle.net">Diego Valle-Jones</a>. Visit the <a href="http://blog.diegovalle.net/search/label/Mexican%20Elections">election posts</a> on my blog for more information.
+<h1><a name="contact">Contact</a></h1>
+I ENJOY READING INTERESTING AND INSIGHTFUL comments from my visitors. Nothing makes me happier than helping people out, so don’t hesitate to get in touch with me by emailing me directly at 
+<script type="text/javascript">
+            <!--
+            // Email obfuscator script 2.1 by Tim Williams, University of Arizona
+            // Random encryption key feature by Andrew Moulden, Site Engineering Ltd
+            // This code is freeware provided these four comment lines remain intact
+            // A wizard to generate this code is at http://www.jottings.com/obfuscator/
+            { coded = "szmCAXHGGm@CtHzG.7At"
+              key = "FSzqZv5TQLbx7Grj1dgAeKDM9X3WYJphUaEy4sCnmf8RiVNkPw2BOHclu6I0to"
+              shift=coded.length
+              link=""
+              for (i=0; i<coded.length; i++) {
+                if (key.indexOf(coded.charAt(i))==-1) {
+                  ltr = coded.charAt(i)
+                  link += (ltr)
+                }
+                else {     
+                  ltr = (key.indexOf(coded.charAt(i))-shift+key.length) % key.length
+                  link += (key.charAt(ltr))
+                }
+              }
+            document.write("<a href='mailto:"+link+"'>"+link+"<\/a>")
+            }
+            //-->
+            </script> (se habla español).
+
+
+	</div>
+
+
+      </div>
+      <hr>
+
+      <footer>
+        <p>&copy; Diego Valle-Jones 2012. Made with love, <a href="">R</a>, and <a href="http://d3js.org/">D3</a></p>
+      </footer>
+
+    </div> <!-- /container -->
+
+	    <script src="js/d3.v2.min.js"></script>
+
+	    <script src="js/chart.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<script>window.jQuery || document.write('<script src="js/libs/jquery-1.7.2.min.js"><\/script>')</script>
+
+<script src="js/libs/bootstrap/bootstrap.min.js"></script>
+
+<script src="js/script.js"></script>
+<script>
+	var _gaq=[['_setAccount','UA-XXXXX-X'],['_trackPageview']];
+	(function(d,t){var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
+	g.src=('https:'==location.protocol?'//ssl':'//www')+'.google-analytics.com/ga.js';
+	s.parentNode.insertBefore(g,s)}(document,'script'));
+</script>
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=212097428820706";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+</body>
+</html>

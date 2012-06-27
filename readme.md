@@ -1,4 +1,4 @@
-Based in part on replication provided by Simon Jackman
+Based in part on replication code provided by Simon Jackman
 
 References
 
