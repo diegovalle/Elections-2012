@@ -10,7 +10,7 @@
 kelection.day <- as.Date("2012-07-01")
 ##Number of simulations to run in forecasting the election
 ##Note that if you change the number of simulations from
-##100 you'll also have to change kalman(candidate).bug files
+##1000 you'll also have to change kalman(candidate).bug files
 ##to generate more samples from the posterior
 nSimulations <- 1000
 

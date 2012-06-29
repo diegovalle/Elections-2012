@@ -63,7 +63,7 @@ mean.prediction <- data.frame(epn = getMeanVec(pena, days.to.election),
                 jvm = getMeanVec(vaz, days.to.election),
                 amlo = getMeanVec(amlo, days.to.election), 
                 gqt = getMeanVec(quadri, days.to.election))
-mean.prediction$date <- seq(max(polls$date)+1, kelection.day,
+mean.prediction$date <- seq(max(polls$date)+1, kelection.day+1,
                         by = "day")
 
 #For d3.js the confidence intervals and mean
@@ -88,7 +88,7 @@ mean.intervals <- rbind(
       getQuantileVec(vaz, days.to.election),
       getQuantileVec(amlo, days.to.election),
       getQuantileVec(quadri, days.to.election))
-mean.intervals$date <- seq(max(polls$date)+1, kelection.day,
+mean.intervals$date <- seq(max(polls$date)+1, kelection.day+1,
                         by = "day")
 mean.intervals$variable <- rep(c(
                                   "epn",
