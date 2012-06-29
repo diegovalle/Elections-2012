@@ -8,3 +8,4 @@ chart/*
 sj/*
 cache/*
 jags/*.txt
+jags/*.R

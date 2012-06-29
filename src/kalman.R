@@ -6,20 +6,32 @@
 # Purpose: Implement a poll of polls based on the paper Pooling of the polls by Simon Jackman and its associated replication code 
 # Copyright (c) Diego Valle-Jones. All rights reserved
 
-
-#Read the file with the weekly gea-isa poll
-data <- read.csv("clean-data/polldb-weeklygea.csv")
-data$date.posix <- as.Date(data$date)
-data <- subset(data, date.posix >= as.Date("2012-02-01"))
-data <- data[!is.na(data$epn), ]
-start.date <- min(as.Date(data$date))
-end.date <- max(as.Date(data$date))
-data$date <- julian(as.Date(data$date),
-                    origin=as.Date("2004-01-01"))
-data <- arrange(data, date)
-day.of.election <- julian(as.Date("2012-07-01"),
-                          origin=as.Date("2004-01-01"))
-
+mexVar <- function(data, candidate) {
+  ## Description: 
+  ## Calculate the variance of a pollwhen there are four candidates
+  ## Args:
+  ##   data - the data frame with the polls
+  ##   candidate - the name of the candidate to calculate the variance
+  ## Returns: 
+  ##  a scalar with the variance
+  
+  alpha <- data.frame(data$epn,
+    data$amlo,
+                      data$jvm,
+                      data$gqt)
+  alpha <- sapply(alpha, function(x) x * data$size+0.005)
+  
+  if(candidate == "epn")
+    index <- 1
+  else if(candidate == "amlo")
+    index <- 2
+  else if(candidate == "jvm")
+    index <- 3
+  else if(candidate == "gqt")
+    index <- 4
+  var <- apply(alpha, 1, function(x) var(rdirichlet(10000, x)[,index]))
+  return(var)
+}
 
 jaggit <- function(data, candidate = "epn") {
 # Description: 
@@ -34,26 +46,10 @@ jaggit <- function(data, candidate = "epn") {
 #   jaggit(data)
 #   yields: a couple of files in the jags subdirectory
 #
-
+  var <- mexVar(data, candidate)
   foo <- list()
 
-  
-  alpha <- data.frame(data$epn,
-    data$amlo,
-    data$jvm,
-    data$gqt)
-  alpha <- sapply(alpha, function(x) x * data$size+0.005)
-
-  if(candidate == "epn")
-    index <- 1
-  else if(candidate == "amlo")
-    index <- 2
-  else if(candidate == "jvm")
-    index <- 3
-  else if(candidate == "gqt")
-    index <- 4
-  var <- apply(alpha, 1, function(x) var(rdirichlet(10000, x)[,index]))
-
+ 
   foo$y <- data[[candidate]]
   foo$y[foo$y == 0]  <- 0.005
   foo$y[is.na(foo$y)] <- 0.005
@@ -124,44 +120,57 @@ convertToDataFrame <- function(list) {
 }
 
 
+#Read the file with the weekly gea-isa poll
+data <- read.csv("clean-data/polldb-weeklygea.csv")
+data$date.posix <- as.Date(data$date)
+data <- subset(data, date.posix >= as.Date("2012-02-01"))
+data <- data[!is.na(data$epn), ]
+start.date <- min(as.Date(data$date))
+end.date <- max(as.Date(data$date))
+data$date <- julian(as.Date(data$date),
+                    origin=as.Date("2004-01-01"))
+data <- arrange(data, date)
+day.of.election <- julian(as.Date("2012-07-01"),
+                          origin=as.Date("2004-01-01"))
+
+
+
 ##length(sim.epn$alpha[,1])
 
-
+#Since JAGS is not multithreaded we can parallelize it manually
 foreach(i = c("epn", "amlo", "jvm", "gqt")) %dopar% {
   jaggit(data, i)
   NULL
 }
-#jaggit(data, "epn")
+
+#Read the output and convert to data.frame for each of the 4 candidates
 sim.epn <- readJagsOutput("epn")
 alpha.epn <- convertToDataFrame(sim.epn)
 alpha.epn$candidate <- "epn"
-#alpha <- rbind(alpha, alpha.epn)
 
-#jaggit(data, "amlo")
 sim.amlo <- readJagsOutput("amlo")
 alpha.amlo <- convertToDataFrame(sim.amlo)
 alpha.amlo$candidate <- "amlo"
 
 
-#jaggit(data, "jvm")
 sim.jvm <- readJagsOutput("jvm")
 alpha.jvm <- convertToDataFrame(sim.jvm)
 alpha.jvm$candidate <- "jvm"
 
-
-#jaggit(data, "gqt")
 sim.gqt <- readJagsOutput("gqt")
 alpha.gqt <- convertToDataFrame(sim.gqt)
 alpha.gqt$candidate <- "gqt"
 
-
+#bind the data for all the candidates
 alpha <- rbind(alpha.epn, alpha.amlo)
 alpha <- rbind(alpha, alpha.jvm)
 alpha <- rbind(alpha, alpha.gqt)
 
 
-#Amlo > JVM
+
+#Summary statistics
 lastcol <- ncol(sim.amlo$alpha)
+#Amlo > JVM
 sum(sim.amlo$alpha[,lastcol] > sim.jvm$alpha[,lastcol]) / length(sim.jvm$alpha[,lastcol])
 mean(sim.epn$alpha[,lastcol])
 mean(sim.amlo$alpha[,lastcol])
@@ -198,7 +207,8 @@ p <- ggplot(alpha, aes(date, bar, group = candidate)) +
 ggsave(file.path("graphs","kalmanreg.svg"), plot = p, dpi = 100, w = 6, h=6)
 
 
-
+#House Effects
+#Order the pollster by MSE from the trendline
 mpolls.pred <- merge(alpha, mdata, by = c("date", "candidate"),
                      all.x = TRUE)
 mpolls.pred <- ddply(mpolls.pred, .(pollster), transform,
@@ -224,11 +234,13 @@ p <- ggplot(alpha, aes(date, bar, group = candidate)) +
 ggsave(file.path("graphs","house-effect.svg"), plot = p, dpi = 100, w = 9.6, h=6)
 
 
-p <- p+
-  facet_wrap(~pollster) +
-  opts(title = "Net Voting Intention with Trendline (Kalman Filter), by Polling Firm")
+##Chart with alphabetical order
+##p <- p+
+##  facet_wrap(~pollster) +
+##  opts(title = "Net Voting Intention with Trendline (Kalman Filter), by Polling Firm")
 
 
+##Suport for JVM dropped with the start of her campaing
 ggplot(alpha.jvm, aes(date, bar)) +
   geom_line(aes(color = candidate), size = 1.2, color = "#00448b") +
   geom_vline(xintercept = as.numeric(as.Date("2012-03-30"))) +
@@ -245,6 +257,7 @@ ggplot(alpha.jvm, aes(date, bar)) +
   opts(title = "Vázquez Mota Voting Intention with Trendline (Kalman Filter with House Effects)")
 ggsave(file.path("graphs","josefina.svg"), dpi = 100, w = 9.6, h=5)
 
+##Support for Quadri went up after the first presidential debate
 ggplot(alpha.gqt, aes(date, bar, group = candidate)) +
   geom_point(data = subset(mdata, candidate == "gqt"), size = 4, alpha = 1,
              aes(date, value, group = pollster)) +
