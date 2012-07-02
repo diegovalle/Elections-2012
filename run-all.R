@@ -13,6 +13,9 @@ kelection.day <- as.Date("2012-07-01")
 ##1000 you'll also have to change kalman(candidate).bug files
 ##to generate more samples from the posterior
 nSimulations <- 1000
+##The results of the election on July 1, 2012
+final.result <- c(.3824, .3138, .2526, .0242)
+final.result <- sapply(final.result, function(x) x / sum(final.result))
 
 #load packages
 source("src/load-libraries.R")

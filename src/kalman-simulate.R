@@ -149,7 +149,6 @@ temppolls$date <- formatJSONDate(temppolls$date)
 temppolls$start <- formatJSONDate(temppolls$start)
 temppolls$end <- formatJSONDate(temppolls$end)
 temppolls$pollster <- as.character(temppolls$pollster)
-head(polls)
 
 t.mean.prediction <- mean.prediction
 t.mean.prediction$date <- formatJSONDate(t.mean.prediction$date)
@@ -160,3 +159,12 @@ cat(toJSON(list(kalman = temp,
                 forecast = t.mean.prediction,
                 quants = quants)))
 sink()
+
+## t <- as.data.frame(t(temppolls[!is.na(temppolls$epn),]))
+## nam <- names(t[[1]])
+## t <- apply(t, 2, as.character)
+## t <- apply(t, 2, function(x) {names(x) <- nam;x})
+
+## sink("bla.txt")
+## cat(toJSON(t))
+## sink()
