@@ -6,124 +6,10 @@
 # Purpose: Implement a poll of polls based on the paper Pooling of the polls by Simon Jackman and its associated replication code 
 # Copyright (c) Diego Valle-Jones. All rights reserved
 
-mexVar <- function(data, candidate) {
-  ## Description: 
-  ## Calculate the variance of a pollwhen there are four candidates
-  ## Args:
-  ##   data - the data frame with the polls
-  ##   candidate - the name of the candidate to calculate the variance
-  ## Returns: 
-  ##  a scalar with the variance
-  
-  alpha <- data.frame(data$epn,
-    data$amlo,
-                      data$jvm,
-                      data$gqt)
-  alpha <- sapply(alpha, function(x) x * data$size+0.005)
-  
-  if(candidate == "epn")
-    index <- 1
-  else if(candidate == "amlo")
-    index <- 2
-  else if(candidate == "jvm")
-    index <- 3
-  else if(candidate == "gqt")
-    index <- 4
-  var <- apply(alpha, 1, function(x) var(rdirichlet(10000, x)[,index]))
-  return(var)
-}
-
-jaggit <- function(data, candidate = "epn") {
-# Description: 
-#   Prepares 
-# Args:
-#   data - a data frame with the series of polls
-#   candidate - the name of the candidate
-#
-# Returns: 
-#   NADA, but the files outputed by jags are left in the jags directory
-# Example:
-#   jaggit(data)
-#   yields: a couple of files in the jags subdirectory
-#
-  var <- mexVar(data, candidate)
-  foo <- list()
-
- 
-  foo$y <- data[[candidate]]
-  foo$y[foo$y == 0]  <- 0.005
-  foo$y[is.na(foo$y)] <- 0.005
-  ##var <- foo$y*(1-foo$y) / data$size
-  foo$prec <- 1 / var
-  foo$date <- data$date - min(data$date) + 1
-  foo$org <- data$pollster
-  foo$NPOLLS <- length(foo$y)
-  foo$NPERIODS <- length(min(data$date):max(data$date))
-  foo$alpha <- c(rep(NA,length((min(data$date)):max(data$date))))  ## actual 2PP on last day
-  
-  ## write content of object foo back to top level directory
-  for(i in 1:length(foo))
-    assign(x=names(foo)[i],
-           value=foo[[i]])
-  dump(list=names(foo), file = str_c("jags/dumpdata-", candidate, ".R"))   ## dump
-  system.str <- str_c("cd jags;jags jags-", candidate, ".cmd")
-  ## run jags job in batch mode
-  system(system.str)
-}
-
-readJagsOutput <- function(candidate) {
-  # Description: 
-#   Read the files created by JAGS
-# Args:
-#  
-#
-# Returns: 
-#   a list with the posterior estimates of the true voting intention levels in alpha
-  ##and the house effect
-  candidate <- toupper(candidate)
-  alpha <- read.coda(str_c("jags/", candidate, "chain1.txt"),
-                     str_c("jags/", candidate, "index.txt"),
-                     quiet = TRUE)
-  total.days <- length(seq(start.date, end.date, by ="day"))
-  house <- alpha[,(total.days + 2):(total.days+ 2 + 11)]
-  sigma <- alpha[,(total.days + 1)]
-  alpha <- alpha[,1:total.days]
-  return(list(alpha = alpha,
-              house = house,
-              sigma = sigma
-  ))
-}
-
-convertToDataFrame <- function(list) {
-# Description: 
-#  Convert the posterior estimates of voting intention into a data.frame
-# Args:
-#   list - the list returned by readJagsOutput
-#
-# Returns: 
-#  A data frame containing
-# Example:
-#   covertToDataFrame(list)
-#   yields:
-#               bar     lower     upper       date candidate
-#alpha[1] 0.4649942 0.4506959 0.4795549 2012-02-18       epn
-#...........................................................
-
-  alpha.bar <- apply(list$alpha, 2, mean)
-  alpha.ci <- apply(list$alpha, 2, quantile, c(.025, .975))
-  alpha.ci <- as.data.frame(t(alpha.ci))
-  alpha.ci$date <- seq(start.date, end.date, by ="day") 
-  alpha.ci <- cbind(alpha.bar, alpha.ci)
-  names(alpha.ci) <- c("bar", "lower", "upper", "date")
-  
-  return(alpha.ci)
-}
-
-
 #Read the file with the weekly gea-isa poll
 data <- read.csv("clean-data/polldb-weeklygea.csv")
 data$date.posix <- as.Date(data$date)
-data <- subset(data, date.posix >= as.Date("2012-02-01"))
+data <- subset(data, date.posix >= as.Date("2012-03-28"))
 data <- data[!is.na(data$epn), ]
 start.date <- min(as.Date(data$date))
 end.date <- max(as.Date(data$date))
@@ -181,7 +67,40 @@ quantile(sim.amlo$alpha[,lastcol], c(.0025, .975))
 quantile(sim.jvm$alpha[,lastcol], c(.0025, .975))
 quantile(sim.gqt$alpha[,lastcol], c(.0025, .975))
 
-sum(sim.gqt$alpha[,120] > .02)
+##sum(sim.gqt$alpha[,120] > .02)
+
+
+##House Effects
+house.epn <- houseDataFrame(sim.epn)
+house.epn$candidate <- "epn"
+
+house.amlo <- houseDataFrame(sim.amlo)
+house.amlo$candidate <- "amlo"
+
+house.jvm <- houseDataFrame(sim.jvm)
+house.jvm$candidate <- "jvm"
+
+house <- rbind(house.jvm, house.amlo)
+house <- rbind(house, house.epn)
+
+house <- ddply(house,
+                   .(variable, candidate),
+                   transform,
+                   order = abs(mean(value)))
+house <- ddply(house,
+                   .(variable),
+                   transform,
+                   order = abs(mean(order)))
+house$variable <- with(house, reorder(variable, order))
+
+
+plotPosteriorHouseDensity(house, "Posterior Distribution of House Effects, Mexican 2012 Presidential Election")
+ggsave(file.path("graphs","house.svg"), dpi = 100, w = 9.6, h=6)
+
+
+
+
+
 
 #Long form for the plots
 mdata <- melt(data[, c("date.posix", "pollster",
@@ -203,23 +122,40 @@ p <- ggplot(alpha, aes(date, bar, group = candidate)) +
                      values = c("#ffd217", "red", "lightblue", "#00448b"),
                      labels = c("EPN", "AMLO", "JVM", "GQT"),
                      breaks = c("epn", "amlo", "jvm", "gqt")) +
-  opts(title = "Net Voting Intention with Trendline (Kalman Filter)\n2012 Mexican Presidential Election") 
+  opts(title = "Net Voting Intention with Trendline (Kalman Filter)\n2012 Mexican Presidential Election 'Quick Count'") +
+  geom_point(data = data.frame(res = final.result,
+               date = as.Date("2012-07-01"),
+               candidate = "Cat"),
+               aes(date, res, shape = "Official Count")) +
+  scale_shape_manual("", values = c(15))
 ggsave(file.path("graphs","kalmanreg.svg"), plot = p, dpi = 100, w = 6, h=6)
 
+ma <- function(x,n=3){filter(x,rep(1/n,n), sides=2)}
 
 #House Effects
 #Order the pollster by MSE from the trendline
 mpolls.pred <- merge(alpha, mdata, by = c("date", "candidate"),
                      all.x = TRUE)
+
+mpolls.pred <- ddply(mpolls.pred, .(pollster, candidate), transform,
+      order = ((((bar[length(bar)] - value[length(value)])^2))))
+
 mpolls.pred <- ddply(mpolls.pred, .(pollster), transform,
-      order = mean((bar - value)^2, na.rm = TRUE))
+      order = sqrt(sum(order)))
+
 mpolls.pred$pollster <- reorder(mpolls.pred$pollster, mpolls.pred$order)
 mpolls.pred <- na.omit(mpolls.pred)
 
+mpolls.pred <- merge(mpolls.pred, final.polls[,c("pollster",
+                                       "euclidian"
+                                       )],
+       all.x = TRUE)
+mpolls.pred$pollster <- reorder(mpolls.pred$pollster, mpolls.pred$euclidian)
+
 p <- ggplot(alpha, aes(date, bar, group = candidate)) +
-  geom_line(aes(color = candidate), size = 1.2) +
+  geom_line(aes(color = candidate), size = .8) +
   #geom_vline(xintercept = as.numeric(as.Date("2012-05-06"))) +
-  geom_point(data = mpolls.pred, size = 2, alpha = .7,
+  geom_point(data = mpolls.pred, size = 2.5, alpha = .7,
              aes(date, value, group = candidate, color = candidate )) +
   geom_ribbon(aes(ymin = lower, ymax = upper),
               alpha = .2)+
@@ -228,9 +164,16 @@ p <- ggplot(alpha, aes(date, bar, group = candidate)) +
   scale_color_manual("candidate",
                      values = c("#ffd217", "red", "lightblue", "#00448b"),
                      labels = c("EPN", "AMLO", "JVM", "GQT"),
-                     breaks = c("epn", "amlo", "jvm", "gqt"))+
+                     breaks = c("epn", "amlo", "jvm", "gqt")) +
+  geom_point(data = data.frame(res = final.result,
+               date = as.Date("2012-07-01"),
+               candidate = "Cat"),
+               aes(date, res, shape = "Official Count")) +
   facet_wrap(~pollster) +
-  opts(title = "Net Voting Intention with Trendline (Kalman Filter), by Polling Firm")
+  opts(title = "Net Voting Intention with Trendline (Kalman Filter), by Polling Firm")+
+  scale_shape_manual("", values = c(15)) +
+  scale_x_date(breaks = date_breaks("months"),
+               labels = date_format("%b"))
 ggsave(file.path("graphs","house-effect.svg"), plot = p, dpi = 100, w = 9.6, h=6)
 
 
@@ -254,7 +197,12 @@ ggplot(alpha.jvm, aes(date, bar)) +
   scale_y_continuous(labels = percent) +
   scale_color_hue("pollster") +
   ylab("") + xlab("date") +
-  opts(title = "Vázquez Mota Voting Intention with Trendline (Kalman Filter with House Effects)")
+  opts(title = "Vázquez Mota Voting Intention with Trendline (Kalman Filter with House Effects)")+
+  geom_point(data = data.frame(res = final.result[3],
+               date = as.Date("2012-07-01"),
+               candidate = "Cat"),
+               aes(date, res, shape = "Official Count")) +
+  scale_shape_manual("", values = c(15))
 ggsave(file.path("graphs","josefina.svg"), dpi = 100, w = 9.6, h=5)
 
 ##Support for Quadri went up after the first presidential debate
@@ -271,5 +219,10 @@ ggplot(alpha.gqt, aes(date, bar, group = candidate)) +
   scale_y_continuous(labels = percent) +
   ylab("") + xlab("date") +
   scale_color_hue("pollster") +
-  opts(title = "Quadri Voting Intention with Trendline (Kalman Filter) - 2012 Mexican Presidential Election")
+  opts(title = "Quadri Voting Intention with Trendline (Kalman Filter) - 2012 Mexican Presidential Election")+
+  geom_point(data = data.frame(res = final.result[4],
+               date = as.Date("2012-07-01"),
+               candidate = "Cat"),
+               aes(date, res, shape = "Official Count")) +
+  scale_shape_manual("", values = c(15))
 ggsave(file.path("graphs","quadri.svg"), dpi = 100, w = 9.6, h=5)

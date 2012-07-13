@@ -15,9 +15,23 @@ model{
  tau <- 1/pow(sigma,2)   ## deterministic transform to precision
  sigma ~ dunif(0,.01)    ## uniform prior on standard deviation
 
- alpha[1] ~ dunif(0.19, 0.26) ## initialization of daily track
+ alpha[1] ~ dunif(0.19, 0.35) ## initialization of daily track
 
- for(i in 1:12){          ## vague normal priors for house effects
-       house[i] ~ dnorm(0,.01)
- }
+ ##for(i in 1:11){          ## vague normal priors for house effects
+   ##    house[i] ~ dnorm(0,.01)
+ ##}
+##Use priors from the 2006 elections or the overall dnorm(0,.01)
+ house[1] ~ dnorm(.0012, 5540)       ##Mitofsky
+ house[2] ~ dnorm(.0030, 3535)       ##El Sol de México-Parametría
+ house[3] ~ dnorm(-0.005,.01)       ##El Universal-Buendía y Laredo
+ house[4] ~ dnorm(-.0139, 4387)       ##Excélsior-Ulises Beltrán
+ house[5] ~ dnorm(-0.005,.01)       ##Grupo Fórmula-Con Estadística
+ house[6] ~ dnorm(.0032, 5896)       ##Grupo Reforma
+ house[7] ~ dnorm(-0.005,.01)       ##Indemerc
+ house[8] ~ dnorm(-0.005,.01)       ##Ipsos-Bimsa
+ house[9] ~ dnorm(-0.005,.01)      ##Mercadei
+ house[10] ~ dnorm(-.0186, 4093)       ##Milenio-GEA ISA
+ house[11] ~ dnorm(-0.005,.01)       ##SDP Noticias-Covarrubias
+ house[12] ~ dnorm(-.0126, 4945)       ##UNO TV-María de las Heras
+ house[13] ~ dnorm(-0.005,.01)                     ##Votia
 }

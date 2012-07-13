@@ -22,6 +22,8 @@ cleanGEA <- function(filename) {
                                      "amlo", "gqt",
                                      "no.answer")], 2, 
                                function(x) x / 100)
+  ##Make sure error is a string
+  df$error <- as.character(df$error)
   df$start <- as.Date(df$start, format = "%d/%m/%y")
   df$end <- as.Date(df$end, format = "%d/%m/%y")
   ##Treat the quarterly poll by gea-isa as belonging to the daily tracking poll
@@ -49,6 +51,7 @@ adn$date.x <- NULL
 adn$error.x <- str_replace(adn$error.x, "±", "")
 adn$error.x <- as.numeric(str_replace(adn$error.x, "%", "")) / 100
 adn$error.y <- NULL
+adn$no.answer.y[!is.na(adn$no.answer.x)] <- adn$no.answer.x[!is.na(adn$no.answer.x)]
 adn$no.answer.x <- NULL
 adn$size.y <- NULL
 adn$type.y <- NULL
@@ -138,7 +141,7 @@ mpolls.gross<- melt(na.omit(polls[, c("pollster",
                             "amlo.gross",
                             "gqt.gross",
                             "no.answer")]),
-                  id = c("date", "pollster"))
+                  id = c("date", "pollster", "no.answer"))
 
 
 
@@ -147,11 +150,12 @@ days.to.election <- ceiling(kelection.day - max(polls$date))
 test_that(max(polls$date) + days.to.election, is_identical_to(kelection.day))
 ##polls <- subset(polls, !pollster %in% c("Milenio-GEA ISA", "GEA-ISA"))
 
-## ggplot(data.frame(error = sqrt(1/adn$size),
-##            poll.error = adn$error,
-##            diff = sqrt(1/adn$size) - adn$error,
-##                   pollster = adn$pollster),
-##        aes(poll.error, error, label = pollster)) +
-##   geom_point() +
-##   geom_text() +
-##   geom_abline(intercept = 0, slope = 1) 
+ggplot(data.frame(error = sqrt(1/adn$size),
+           poll.error = adn$error,
+           diff = sqrt(1/adn$size) - adn$error,
+                  pollster = adn$pollster),
+       aes(poll.error, error, label = pollster)) +
+  geom_point() +
+  geom_text() +
+  geom_abline(intercept = 0, slope = 1) 
+ggsave("graphs/poll-error.png", dpi = 100, width = 7, height = 7)

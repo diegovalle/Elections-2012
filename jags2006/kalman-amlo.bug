@@ -15,10 +15,9 @@ model{
  tau <- 1/pow(sigma,2)   ## deterministic transform to precision
  sigma ~ dunif(0,.01)    ## uniform prior on standard deviation
 
- alpha[1] ~ dunif(0.005, 0.015) ## initialization of daily track
+ alpha[1] ~ dunif(0.20, 0.40) ## initialization of daily track
 
- for(i in 1:13){          ## vague normal priors for house effects
+ for(i in 1:11){          ## vague normal priors for house effects
        house[i] ~ dnorm(0,.01)
  }
-
 }

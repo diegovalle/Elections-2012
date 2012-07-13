@@ -9,3 +9,5 @@ sj/*
 cache/*
 jags/*.txt
 jags/*.R
+jags2006/*.txt
+jags2006/*.R
